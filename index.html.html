@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Request Life Cycle</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#060a0f;--panel:#0d1520;--border:#1a2d45;
+    --blue:#00c8ff;--green:#00ff9f;--orange:#ff6b2b;--purple:#a855f7;--yellow:#fbbf24;
+    --red:#ff3b5c;--teal:#00e5c0;
+    --text:#e2f0ff;--dim:#4a6a8a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);font-family:'Sora',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;display:flex;flex-direction:column;align-items:center}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .wrap{position:relative;z-index:1;width:100%;max-width:1200px;padding:30px 20px 50px}
+  header{text-align:center;margin-bottom:36px}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--blue);border:1px solid var(--blue);padding:4px 14px;border-radius:20px;margin-bottom:12px;opacity:.8}
+  h1{font-size:clamp(22px,4vw,38px);font-weight:700;background:linear-gradient(135deg,#00c8ff,#00ff9f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px}
+  header p{margin-top:8px;color:var(--dim);font-size:14px}
+  .info-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:600px){.info-row{grid-template-columns:repeat(2,1fr)}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .3s,box-shadow .3s}
+  .card.hl{border-color:var(--blue);box-shadow:0 0 20px #00c8ff44}
+  .cl{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+  .cv{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--blue)}
+  .cv.g{color:var(--green)}.cv.o{color:var(--orange)}.cv.p{color:var(--purple)}
+  .sbar{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 20px;margin-bottom:20px;font-family:'JetBrains Mono',monospace;font-size:12px;flex-wrap:wrap}
+  .sdot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 20px #00ff9f55;animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+  .sl{color:var(--dim)}.sv{color:var(--blue);font-weight:600}.ss{color:var(--border)}
+  .dgram{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:50px 20px 28px;position:relative;overflow:hidden;margin-bottom:20px}
+  .dgram::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+  .waf{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#1a0d0d;border:1px solid #ff6b2b66;color:var(--orange);font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px}
+  .nrow{display:flex;align-items:flex-start;justify-content:center;padding:8px 0}
+  .nw{display:flex;flex-direction:column;align-items:center;gap:12px;flex:1;max-width:150px}
+  .ni{width:68px;height:68px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;transition:all .3s;border:2px solid transparent;cursor:pointer}
+  .n-u .ni{background:linear-gradient(135deg,#1a3a5c,#0d2040);border-color:var(--blue);box-shadow:0 0 24px #00c8ff33}
+  .n-c .ni{background:linear-gradient(135deg,#2d1a00,#1a0f00);border-color:var(--orange);box-shadow:0 0 24px #ff6b2b33}
+  .n-n .ni{background:linear-gradient(135deg,#1a3a1a,#0a200a);border-color:var(--green);box-shadow:0 0 24px #00ff9f33}
+  .n-s .ni{background:linear-gradient(135deg,#2a1a3a,#180d24);border-color:var(--purple);box-shadow:0 0 24px #a855f733}
+  .n-d .ni{background:linear-gradient(135deg,#2a2010,#1a1508);border-color:var(--yellow);box-shadow:0 0 24px #fbbf2433}
+  .nn{font-weight:700;font-size:13px;text-align:center}
+  .ns{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;text-align:center}
+  .n-u .nn{color:var(--blue)}.n-c .nn{color:var(--orange)}.n-n .nn{color:var(--green)}.n-s .nn{color:var(--purple)}.n-d .nn{color:var(--yellow)}
+  .nbdg{position:absolute;top:-6px;right:-6px;background:var(--blue);color:#000;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+  .nbdg.show{opacity:1}
+  .conn{flex:1;position:relative;display:flex;align-items:center;height:68px}
+  .cline{width:100%;height:2px;background:var(--border);transition:background .3s,box-shadow .3s}
+  .cline.lit{background:var(--blue);box-shadow:0 0 12px var(--blue)}
+  .cline.litr{background:var(--green);box-shadow:0 0 12px var(--green)}
+  .pkt{position:absolute;width:12px;height:12px;border-radius:50%;top:-5px;opacity:0;transform:translateX(-50%);pointer-events:none;z-index:10}
+  .pf{animation:pFwd .75s ease-in-out forwards}
+  .pb{animation:pBwd .75s ease-in-out forwards}
+  @keyframes pFwd{0%{left:0%;opacity:1}100%{left:100%;opacity:1}}
+  @keyframes pBwd{0%{left:100%;opacity:1}100%{left:0%;opacity:1}}
+  .pr{background:var(--blue);box-shadow:0 0 10px var(--blue)}
+  .pg{background:var(--green);box-shadow:0 0 10px var(--green)}
+  .po{background:var(--orange);box-shadow:0 0 10px var(--orange)}
+  .pp{background:var(--purple);box-shadow:0 0 10px var(--purple)}
+  .py{background:var(--yellow);box-shadow:0 0 10px var(--yellow)}
+  .prd{background:var(--red);box-shadow:0 0 10px var(--red)}
+  .ptl{background:var(--teal);box-shadow:0 0 10px var(--teal)}
+  .ni.flash{animation:nf .5s ease}
+  @keyframes nf{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .twrap{margin-bottom:20px;display:none}
+  .trow{display:flex;gap:4px;height:26px;margin-bottom:10px}
+  .tseg{border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#000;overflow:hidden;white-space:nowrap;transition:width .7s ease;min-width:0}
+  .t1{background:var(--blue)}.t2{background:var(--orange)}.t3{background:var(--green)}.t4{background:var(--purple)}.t5{background:var(--yellow)}
+  .tleg{display:flex;gap:14px;flex-wrap:wrap}
+  .tli{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
+  .tld{width:8px;height:8px;border-radius:2px}
+  .logp{background:#070d14;border:1px solid var(--border);border-radius:12px;padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;height:155px;overflow-y:auto;margin-bottom:18px;scroll-behavior:smooth}
+  .logp::-webkit-scrollbar{width:4px}
+  .logp::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .le{display:flex;gap:12px;padding:3px 0;border-bottom:1px solid #0d1a28;animation:lin .3s ease}
+  @keyframes lin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+  .lt{color:var(--dim);min-width:72px}
+  .lh{min-width:88px}
+  .lm{color:#8db4d8}
+  .hu{color:var(--blue)}.hc{color:var(--orange)}.hn{color:var(--green)}.hs{color:var(--purple)}.hd{color:var(--yellow)}.hx{color:var(--dim)}.hr{color:var(--red)}.ht{color:var(--teal)}
+  .ctrls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .rtg{display:flex;gap:4px;background:#0a1520;border:1px solid var(--border);border-radius:8px;padding:4px}
+  .rb{background:none;border:none;color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+  .rb.a{background:var(--blue);color:#000;font-weight:700}
+  .rb:hover:not(.a){background:var(--border);color:var(--text)}
+  .sbtn{background:linear-gradient(135deg,var(--blue),#0080ff);color:#000;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;border:none;padding:10px 26px;border-radius:8px;cursor:pointer;transition:all .2s;box-shadow:0 0 20px #00c8ff44;letter-spacing:1px}
+  .sbtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 24px #00c8ff66}
+  .sbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .abtn{background:none;border:1px solid var(--green);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .abtn.on{background:var(--green);color:#000;font-weight:700}
+  .cbtn{background:none;border:1px solid var(--border);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 14px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .cbtn:hover{border-color:var(--dim);color:var(--text)}
+  footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);padding:20px 0;border-top:1px solid var(--border);width:100%;max-width:1200px}
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  @media(max-width:650px){.nw{max-width:55px}.ni{width:46px;height:46px;font-size:18px;border-radius:10px}.nn{font-size:9px}.ns{display:none}.conn{height:46px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">NETWORK VISUALIZATION</div>
+    <h1>Web Request Life Cycle</h1>
+    <p>Animated flow — User &#8594; Cloudflare &#8594; Nginx &#8594; Backend &#8594; Database</p>
+  </header>
+
+  <div class="info-row">
+    <div class="card" id="cR"><div class="cl">Total Requests</div><div class="cv" id="vR">0</div></div>
+    <div class="card"><div class="cl">Success (2xx)</div><div class="cv g" id="vO">0</div></div>
+    <div class="card"><div class="cl">Avg Latency</div><div class="cv o" id="vL">&#8212;</div></div>
+    <div class="card"><div class="cl">Last Type</div><div class="cv p" id="vT">&#8212;</div></div>
+  </div>
+
+  <div class="sbar">
+    <div class="sdot" id="sd"></div>
+    <span class="sl">STATUS</span><span class="sv" id="ss">IDLE</span>
+    <span class="ss">|</span>
+    <span class="sl">HOP</span><span class="sv" id="sh">&#8212;</span>
+    <span class="ss">|</span>
+    <span class="sl">METHOD</span><span class="sv" id="sm">&#8212;</span>
+    <span class="ss">|</span>
+    <span class="sl">LATENCY</span><span class="sv" id="sl2">&#8212;</span>
+  </div>
+
+  <div class="dgram">
+    <div class="waf">&#9889; WAF + CACHING + SSL/TLS (SECURITY &amp; EDGE)</div>
+    <div class="nrow">
+      <div class="nw n-u">
+        <div class="ni" id="iu">&#128100;<span class="nbdg" id="bu">0</span></div>
+        <div class="nn">User</div><div class="ns">Browser</div>
+      </div>
+      <div class="conn"><div class="cline" id="l1"></div><div class="pkt" id="p1"></div></div>
+      <div class="nw n-c">
+        <div class="ni" id="ic">&#9729;&#65039;<span class="nbdg" id="bc">0</span></div>
+        <div class="nn">Cloudflare</div><div class="ns">Edge Network</div>
+      </div>
+      <div class="conn"><div class="cline" id="l2"></div><div class="pkt" id="p2"></div></div>
+      <div class="nw n-n">
+        <div class="ni" id="in">&#9881;&#65039;<span class="nbdg" id="bn">0</span></div>
+        <div class="nn">Nginx</div><div class="ns">Reverse Proxy</div>
+      </div>
+      <div class="conn"><div class="cline" id="l3"></div><div class="pkt" id="p3"></div></div>
+      <div class="nw n-s">
+        <div class="ni" id="is">&#128421;&#65039;<span class="nbdg" id="bs">0</span></div>
+        <div class="nn">Backend App</div><div class="ns">Node / Spring</div>
+      </div>
+      <div class="conn"><div class="cline" id="l4"></div><div class="pkt" id="p4"></div></div>
+      <div class="nw n-d">
+        <div class="ni" id="id2">&#128452;&#65039;<span class="nbdg" id="bd">0</span></div>
+        <div class="nn">Database</div><div class="ns">MySQL / Mongo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="twrap" id="tw">
+    <div class="trow">
+      <div class="tseg t1" id="t1" style="width:0%">DNS</div>
+      <div class="tseg t2" id="t2" style="width:0%">TLS</div>
+      <div class="tseg t3" id="t3" style="width:0%">Nginx</div>
+      <div class="tseg t4" id="t4" style="width:0%">App</div>
+      <div class="tseg t5" id="t5" style="width:0%">DB</div>
+    </div>
+    <div class="tleg">
+      <div class="tli"><div class="tld" style="background:var(--blue)"></div>DNS</div>
+      <div class="tli"><div class="tld" style="background:var(--orange)"></div>TLS Handshake</div>
+      <div class="tli"><div class="tld" style="background:var(--green)"></div>Nginx</div>
+      <div class="tli"><div class="tld" style="background:var(--purple)"></div>App Logic</div>
+      <div class="tli"><div class="tld" style="background:var(--yellow)"></div>DB Query</div>
+    </div>
+  </div>
+
+  <div class="logp" id="lp"></div>
+
+  <div class="ctrls">
+    <div class="rtg">
+      <button class="rb a" data-t="API">API REQUEST</button>
+      <button class="rb" data-t="CACHED">CACHED</button>
+      <button class="rb" data-t="STATIC">STATIC</button>
+      <button class="rb" data-t="UNAUTH">UNAUTH</button>
+    </div>
+    <button class="sbtn" id="sndbtn">&#9654; SEND REQUEST</button>
+    <button class="abtn" id="autobtn">&#9201; AUTO</button>
+    <button class="cbtn" id="clrbtn">&#10005; CLEAR</button>
+  </div>
+</div>
+<footer>WEB REQUEST LIFECYCLE VISUALIZER &nbsp;|&nbsp; User &#8594; Cloudflare &#8594; Nginx &#8594; Backend &#8594; DB</footer>
+<script>
+const G=id=>document.getElementById(id);
+let running=false,autoMode=false,autoTimer=null,curType='API';
+let tot=0,ok=0,lats=[],rn=0;
+const cnt={u:0,c:0,n:0,s:0,d:0};
+document.querySelectorAll('.rb').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.rb').forEach(x=>x.classList.remove('a'));
+    b.classList.add('a');curType=b.dataset.t;
+  });
+});
+const prof={API:{a:8,b:12,c:7,d:32,e:35},CACHED:{a:8,b:12,c:18,d:0,e:0},STATIC:{a:8,b:12,c:20,d:0,e:0},UNAUTH:{a:8,b:12,c:5,d:8,e:0}};
+const paths={API:'/api/resource',CACHED:'/api/data',STATIC:'/assets/app.js',UNAUTH:'/api/admin/settings'};
+const statuses={API:'200 OK',CACHED:'200 OK (HIT)',STATIC:'200 OK (CDN)',UNAUTH:'401 Unauthorized'};
+const apiMethods=['GET','POST','PUT','DELETE'];
+const apiPaths={GET:'/api/data',POST:'/api/users',PUT:'/api/users/42',DELETE:'/api/users/42'};
+const apiStatuses={GET:'200 OK',POST:'201 Created',PUT:'200 OK',DELETE:'204 No Content'};
+const apiSQL={GET:'SELECT * FROM data',POST:'INSERT INTO data',PUT:'UPDATE data SET ...',DELETE:'DELETE FROM data WHERE id=42'};
+let lastApiMethod='GET';
+function pickApiMethod(){lastApiMethod=apiMethods[Math.floor(Math.random()*apiMethods.length)];return lastApiMethod;}
+function ts(){const n=new Date();return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}.${String(n.getMilliseconds()).padStart(3,'0')}`}
+function lg(h,m,c){const p=G('lp'),d=document.createElement('div');d.className='le';d.innerHTML=`<span class="lt">${ts()}</span><span class="lh ${c}">[${h}]</span><span class="lm">${m}</span>`;p.appendChild(d);p.scrollTop=p.scrollHeight}
+const sl=ms=>new Promise(r=>setTimeout(r,ms));
+function setSt(s,h,m,l){G('ss').textContent=s;G('ss').style.color=s==='FAIL'?'var(--red)':s==='SUCCESS'?'var(--green)':'var(--blue)';G('sh').textContent=h||'&#8212;';G('sm').textContent=m||'&#8212;';G('sl2').textContent=l?l+'ms':'&#8212;'}
+async function an(pk,ln,dir,col){const p=G(pk),l=G(ln);p.className=`pkt ${col}`;l.className=`cline ${dir==='f'?'lit':'litr'}`;p.style.animation='none';p.offsetHeight;p.className=`pkt ${col} ${dir==='f'?'pf':'pb'}`;return new Promise(r=>setTimeout(()=>{l.className='cline';r()},800))}
+function fl(id){const e=G(id);e.classList.remove('flash');e.offsetHeight;e.classList.add('flash');setTimeout(()=>e.classList.remove('flash'),500)}
+function bump(id,bdg){cnt[id]++;const b=G(bdg);b.textContent=cnt[id];b.classList.add('show')}
+function utim(p){const sum=p.a+p.b+p.c+p.d+p.e||1;const pct=v=>Math.round(v/sum*100)+'%';G('tw').style.display='block';G('t1').style.width=pct(p.a);G('t2').style.width=pct(p.b);G('t3').style.width=pct(p.c);G('t4').style.width=pct(p.d);G('t5').style.width=pct(p.e)}
+async function run(){
+  if(running)return;running=true;G('sndbtn').disabled=true;G('sd').style.background='#ff6b2b';
+  const t=curType,p=prof[t],n=++rn,t0=Date.now();
+  const apiM=t==='API'?pickApiMethod():null;
+  const displayPath=t==='API'?apiPaths[apiM]:paths[t];
+  const displayStatus=t==='API'?apiStatuses[apiM]:statuses[t];
+  lg('SYS',`--- Request #${n}: ${t==='API'?apiM:t} ${displayPath} ---`,'hx');
+  setSt('ACTIVE','USER > CF',t,null);
+  fl('iu');bump('u','bu');lg('USER',`Sending ${t==='API'?apiM:t} ${displayPath} | DNS resolve`,'hu');await sl(200);
+  await an('p1','l1','f','pr');fl('ic');bump('c','bc');setSt('ACTIVE','CLOUDFLARE',t,null);
+  lg('CF','WAF check PASS | SSL termination | Edge routing','hc');await sl(280);
+  if(t==='CACHED'){
+    lg('CF','CACHE HIT - serving from edge, skipping origin','hc');setSt('ACTIVE','CF > USER',t,null);
+    await an('p1','l1','b','pg');fl('iu');
+    const lat=Date.now()-t0;lg('USER',`${statuses[t]} | ${lat}ms (cache hit)`,'hu');setSt('SUCCESS','COMPLETE',t,lat);utim(p);done(lat);return;
+  }
+  if(t==='STATIC'){
+    lg('CF','Static asset request | Forwarding to Nginx origin','hc');setSt('ACTIVE','CF > NGINX',t,null);
+    await an('p2','l2','f','ptl');fl('in');bump('n','bn');setSt('ACTIVE','NGINX',t,null);
+    lg('NGINX','Serving static file /assets/app.js | Cache-Control: max-age=31536000','ht');await sl(220);
+    lg('NGINX','File found | Content-Type: application/javascript | gzip encoded','ht');
+    await an('p2','l2','b','ptl');fl('ic');setSt('ACTIVE','NGINX > CF',t,null);
+    lg('CF','Response received | CDN caching asset for future requests','hc');await sl(180);
+    await an('p1','l1','b','ptl');fl('iu');
+    const lat=Date.now()-t0;lg('USER',`${statuses[t]} | ${lat}ms | Static asset delivered`,'ht');setSt('SUCCESS','COMPLETE',t,lat);utim(p);done(lat);return;
+  }
+  if(t==='UNAUTH'){
+    lg('CF','WAF inspection: missing Authorization header detected','hr');await sl(200);
+    lg('CF','WAF BLOCK — 401 Unauthorized | Request rejected at edge, no origin forwarding','hr');
+    setSt('FAIL','CLOUDFLARE',t,null);
+    await an('p1','l1','b','prd');fl('iu');
+    const lat=Date.now()-t0;lg('USER',`${statuses[t]} | ${lat}ms | Blocked by Cloudflare WAF`,'hr');setSt('FAIL','COMPLETE',t,lat);utim(p);doneErr(lat);return;
+  }
+  await an('p2','l2','f','pr');fl('in');bump('n','bn');setSt('ACTIVE','NGINX',t,null);
+  lg('NGINX','Load balance | Header injection | Route to app','hn');await sl(240);
+  await an('p3','l3','f','po');fl('is');bump('s','bs');setSt('ACTIVE','BACKEND',t,null);
+  lg('APP',`Processing ${t==='API'?apiM:t} | JWT auth | Business logic`,'hs');await sl(320);
+  await an('p4','l4','f','pp');fl('id2');bump('d','bd');setSt('ACTIVE','DATABASE',t,null);
+  const dbSQL=t==='API'?apiSQL[apiM]:'SELECT * FROM data';
+  lg('DB',`SQL: ${dbSQL} | Index scan | Fetching rows`,'hd');await sl(300);
+  lg('DB','Query complete | Connection released','hd');
+  await an('p4','l4','b','py');fl('is');lg('APP','DB result received | Serialize JSON','hs');await sl(200);
+  await an('p3','l3','b','pp');fl('in');lg('NGINX','Response | gzip | Cache headers','hn');await sl(160);
+  await an('p2','l2','b','po');fl('ic');lg('CF','Response | CDN cache | Deliver to client','hc');await sl(180);
+  await an('p1','l1','b','pg');fl('iu');
+  const lat=Date.now()-t0;lg('USER',`${displayStatus} | Total: ${lat}ms`,'hu');setSt('SUCCESS','COMPLETE',t==='API'?apiM:t,lat);utim(p);done(lat);
+}
+function done(lat){tot++;ok++;lats.push(lat);const avg=Math.round(lats.reduce((a,b)=>a+b,0)/lats.length);G('vR').textContent=tot;G('vO').textContent=ok;G('vL').textContent=avg+'ms';G('vT').textContent=curType==='API'?lastApiMethod:curType;G('sd').style.background='var(--green)';const c=G('cR');c.classList.add('hl');setTimeout(()=>c.classList.remove('hl'),700);running=false;G('sndbtn').disabled=false}
+function doneErr(lat){tot++;lats.push(lat);const avg=Math.round(lats.reduce((a,b)=>a+b,0)/lats.length);G('vR').textContent=tot;G('vL').textContent=avg+'ms';G('vT').textContent=curType;G('sd').style.background='var(--red)';const c=G('cR');c.classList.add('hl');setTimeout(()=>c.classList.remove('hl'),700);running=false;G('sndbtn').disabled=false}
+G('sndbtn').addEventListener('click',run);
+G('autobtn').addEventListener('click',()=>{
+  if(autoMode){clearInterval(autoTimer);autoMode=false;G('autobtn').textContent='&#9201; AUTO';G('autobtn').classList.remove('on')}
+  else{autoMode=true;G('autobtn').textContent='&#9209; STOP';G('autobtn').classList.add('on');
+    const seq=['API','API','CACHED','STATIC','API','API','UNAUTH','CACHED','API'];let i=0;
+    autoTimer=setInterval(()=>{if(!running){const t=seq[i%seq.length];document.querySelectorAll('.rb').forEach(b=>b.classList.remove('a'));document.querySelector(`[data-t="${t}"]`).classList.add('a');curType=t;run();i++}},2500)}
+});
+G('clrbtn').addEventListener('click',()=>{G('lp').innerHTML='';G('tw').style.display='none';Object.keys(cnt).forEach(k=>cnt[k]=0);['bu','bc','bn','bs','bd'].forEach(id=>{G(id).textContent=0;G(id).classList.remove('show')});setSt('IDLE','--','--',null);G('sd').style.background='var(--green)';lg('SYS','Cleared. Ready.','hx')});
+lg('SYS','System ready. Click SEND REQUEST or enable AUTO mode.','hx');
+</script>
+</body>
+</html>
