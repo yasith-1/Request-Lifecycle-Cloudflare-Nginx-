@@ -1,3 +1,8 @@
+<!-- 
+  Copyright (c) 2026. All rights reserved.
+  PROPRIETARY AND CONFIDENTIAL.
+  Unauthorized copying, cloning, or distribution of this file is strictly prohibited.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,14 +165,14 @@
     <div class="trow">
       <div class="tseg t1" id="t1" style="width:0%">DNS</div>
       <div class="tseg t2" id="t2" style="width:0%">TLS</div>
-      <div class="tseg t3" id="t3" style="width:0%">Nginx</div>
+      <div class="tseg t3" id="t3" style="width:0%">Proxy</div>
       <div class="tseg t4" id="t4" style="width:0%">App</div>
       <div class="tseg t5" id="t5" style="width:0%">DB</div>
     </div>
     <div class="tleg">
       <div class="tli"><div class="tld" style="background:var(--blue)"></div>DNS</div>
       <div class="tli"><div class="tld" style="background:var(--orange)"></div>TLS Handshake</div>
-      <div class="tli"><div class="tld" style="background:var(--green)"></div>Nginx</div>
+      <div class="tli"><div class="tld" style="background:var(--green)"></div>Edge / Proxy</div>
       <div class="tli"><div class="tld" style="background:var(--purple)"></div>App Logic</div>
       <div class="tli"><div class="tld" style="background:var(--yellow)"></div>DB Query</div>
     </div>
@@ -201,7 +206,7 @@ document.querySelectorAll('.rb').forEach(b=>{
 });
 const prof={API:{a:8,b:12,c:7,d:32,e:35},CACHED:{a:8,b:12,c:18,d:0,e:0},STATIC:{a:8,b:12,c:20,d:0,e:0},UNAUTH:{a:8,b:12,c:5,d:8,e:0}};
 const paths={API:'/api/resource',CACHED:'/api/data',STATIC:'/assets/app.js',UNAUTH:'/api/admin/settings'};
-const statuses={API:'200 OK',CACHED:'200 OK (HIT)',STATIC:'200 OK (CDN)',UNAUTH:'401 Unauthorized'};
+const statuses={API:'200 OK',CACHED:'200 OK (HIT)',STATIC:'200 OK (MISS)',UNAUTH:'401 Unauthorized'};
 const apiMethods=['GET','POST','PUT','DELETE'];
 const apiPaths={GET:'/api/data',POST:'/api/users',PUT:'/api/users/42',DELETE:'/api/users/42'};
 const apiStatuses={GET:'200 OK',POST:'201 Created',PUT:'200 OK',DELETE:'204 No Content'};
@@ -215,7 +220,7 @@ function setSt(s,h,m,l){G('ss').textContent=s;G('ss').style.color=s==='FAIL'?'va
 async function an(pk,ln,dir,col){const p=G(pk),l=G(ln);p.className=`pkt ${col}`;l.className=`cline ${dir==='f'?'lit':'litr'}`;p.style.animation='none';p.offsetHeight;p.className=`pkt ${col} ${dir==='f'?'pf':'pb'}`;return new Promise(r=>setTimeout(()=>{l.className='cline';r()},800))}
 function fl(id){const e=G(id);e.classList.remove('flash');e.offsetHeight;e.classList.add('flash');setTimeout(()=>e.classList.remove('flash'),500)}
 function bump(id,bdg){cnt[id]++;const b=G(bdg);b.textContent=cnt[id];b.classList.add('show')}
-function utim(p){const sum=p.a+p.b+p.c+p.d+p.e||1;const pct=v=>Math.round(v/sum*100)+'%';G('tw').style.display='block';G('t1').style.width=pct(p.a);G('t2').style.width=pct(p.b);G('t3').style.width=pct(p.c);G('t4').style.width=pct(p.d);G('t5').style.width=pct(p.e)}
+function utim(p){const sum=p.a+p.b+p.c+p.d+p.e||1;const pct=v=>Math.round(v/sum*100)+'%';G('tw').style.display='block';G('t1').style.width=pct(p.a);G('t2').style.width=pct(p.b);G('t3').style.width=pct(p.c);G('t3').textContent=(curType==='CACHED'||curType==='UNAUTH')?'Edge':'Proxy';G('t4').style.width=pct(p.d);G('t5').style.width=pct(p.e)}
 async function run(){
   if(running)return;running=true;G('sndbtn').disabled=true;G('sd').style.background='#ff6b2b';
   const t=curType,p=prof[t],n=++rn,t0=Date.now();
@@ -243,8 +248,8 @@ async function run(){
     const lat=Date.now()-t0;lg('USER',`${statuses[t]} | ${lat}ms | Static asset delivered`,'ht');setSt('SUCCESS','COMPLETE',t,lat);utim(p);done(lat);return;
   }
   if(t==='UNAUTH'){
-    lg('CF','WAF inspection: missing Authorization header detected','hr');await sl(200);
-    lg('CF','WAF BLOCK — 401 Unauthorized | Request rejected at edge, no origin forwarding','hr');
+    lg('CF','Edge Auth: Missing or invalid JWT detected','hr');await sl(200);
+    lg('CF','EDGE BLOCK — 401 Unauthorized | Request rejected, no origin forwarding','hr');
     setSt('FAIL','CLOUDFLARE',t,null);
     await an('p1','l1','b','prd');fl('iu');
     const lat=Date.now()-t0;lg('USER',`${statuses[t]} | ${lat}ms | Blocked by Cloudflare WAF`,'hr');setSt('FAIL','COMPLETE',t,lat);utim(p);doneErr(lat);return;
@@ -272,7 +277,17 @@ G('autobtn').addEventListener('click',()=>{
     const seq=['API','API','CACHED','STATIC','API','API','UNAUTH','CACHED','API'];let i=0;
     autoTimer=setInterval(()=>{if(!running){const t=seq[i%seq.length];document.querySelectorAll('.rb').forEach(b=>b.classList.remove('a'));document.querySelector(`[data-t="${t}"]`).classList.add('a');curType=t;run();i++}},2500)}
 });
-G('clrbtn').addEventListener('click',()=>{G('lp').innerHTML='';G('tw').style.display='none';Object.keys(cnt).forEach(k=>cnt[k]=0);['bu','bc','bn','bs','bd'].forEach(id=>{G(id).textContent=0;G(id).classList.remove('show')});setSt('IDLE','--','--',null);G('sd').style.background='var(--green)';lg('SYS','Cleared. Ready.','hx')});
+G('clrbtn').addEventListener('click',()=>{
+  G('lp').innerHTML='';
+  G('tw').style.display='none';
+  Object.keys(cnt).forEach(k=>cnt[k]=0);
+  ['bu','bc','bn','bs','bd'].forEach(id=>{G(id).textContent=0;G(id).classList.remove('show')});
+  setSt('IDLE','--','--',null);
+  G('sd').style.background='var(--green)';
+  tot=0;ok=0;lats=[];rn=0;
+  G('vR').textContent=0;G('vO').textContent=0;G('vL').textContent='—';G('vT').textContent='—';
+  lg('SYS','Cleared. Ready.','hx');
+});
 lg('SYS','System ready. Click SEND REQUEST or enable AUTO mode.','hx');
 </script>
 </body>
