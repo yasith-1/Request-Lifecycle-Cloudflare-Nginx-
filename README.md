@@ -2,10 +2,10 @@
 
 <div align="center">
 
-![GitHub stars](https://img.shields.io/github/stars/yasith-1/web-request-lifecycle?style=for-the-badge&logo=github&color=blue)
-![GitHub forks](https://img.shields.io/github/forks/yasith-1/web-request-lifecycle?style=for-the-badge&logo=github&color=green)
-![GitHub issues](https://img.shields.io/github/issues/yasith-1/web-request-lifecycle?style=for-the-badge&logo=github&color=red)
-![GitHub license](https://img.shields.io/github/license/yasith-1/web-request-lifecycle?style=for-the-badge&logo=github&color=yellow)
+![GitHub stars](https://img.shields.io/github/stars/yasith-1/Request-Lifecycle-Cloudflare-Nginx?style=for-the-badge&logo=github&color=blue)
+![GitHub forks](https://img.shields.io/github/forks/yasith-1/Request-Lifecycle-Cloudflare-Nginx?style=for-the-badge&logo=github&color=green)
+![GitHub issues](https://img.shields.io/github/issues/yasith-1/Request-Lifecycle-Cloudflare-Nginx?style=for-the-badge&logo=github&color=red)
+![GitHub license](https://img.shields.io/github/license/yasith-1/Request-Lifecycle-Cloudflare-Nginx?style=for-the-badge&logo=github&color=yellow)
 
 <img src="screenshots/dashboard.png" width="100%">
 
